@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>JB Customizer</title> 
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/loading-wheel.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/loading-wheel.png">
+    <link rel="stylesheet" href="assets/styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web-animations/2.3.2/web-animations.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/haltu/muuri@0.9.5/dist/muuri.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+
+</head>
+<body>
+
+    <div class="header">
+        <h1>MAGIC WALL</h1>
+        <!-- <p>Create your Jersey Blanket Design!</p>
+        <p id="current-grid-size-display" style="font-weight: bold; margin-top: 5px;"></p> -->
+        <div class="instructions">
+            <p style="margin-bottom: 0; margin-top: 30px;"><strong>How to use:</strong></p>
+            <ol style="text-align: start;">
+                <li>Upload squares using the "Upload Image(s)" button below.</li>
+                <li>Drag squares from the "Available Squares" pool into the grid above.</li>
+                <li>Choose Bordering, Sashing, and Backing colors.</li>
+                <li>Click "Download Design" to save your creation.</li>
+                <li>Email the downloaded image to <a href="mailto:jasonricart@jerseyblanket.com">jasonricart@jerseyblanket.com</a>!</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="top-section">
+        <div>
+            <div class="grid-container">
+                <div class="grid grid-2"> </div>
+            </div>
+            <div class="btn-contain">
+                <button id="download-btn">Download Design</button>
+            </div>
+        </div>
+        
+
+        <div class="customization-panel">
+           <div class="customization-group">
+                <h4>Bordering</h4>
+                <div class="color-options" data-target="grid-container">
+                    <div class="color-swatch" style="background-image: url('assets/jersey-blue.webp');" data-img="assets/jersey-blue.webp" data-name="Jersey Blue"></div>
+                    <div class="color-swatch" style="background-image: url('assets/jersey-red.webp');" data-img="assets/jersey-red.webp" data-name="Jersey Red"></div>
+                    <div class="color-swatch" style="background-image: url('assets/azure.webp');" data-img="assets/azure.webp" data-name="Azure"></div>
+                    <div class="color-swatch" style="background-image: url('assets/basil.webp');" data-img="assets/basil.webp" data-name="Basil"></div>
+                    <div class="color-swatch" style="background-image: url('assets/bettys_red.webp');" data-img="assets/bettys_red.webp" data-name="Betty's Red"></div>
+                    <div class="color-swatch" style="background-image: url('assets/black.webp');" data-img="assets/black.webp" data-name="Black"></div>
+                    <div class="color-swatch" style="background-image: url('assets/burgundy.webp');" data-img="assets/burgundy.webp" data-name="Burgundy"></div>
+                    <div class="color-swatch" style="background-image: url('assets/iron.webp');" data-img="assets/iron.webp" data-name="Iron"></div>
+                    <div class="color-swatch" style="background-image: url('assets/lemon.webp');" data-img="assets/lemon.webp" data-name="Lemon"></div>
+                    <div class="color-swatch" style="background-image: url('assets/metal.webp');" data-img="assets/metal.webp" data-name="Metal"></div>
+                    <div class="color-swatch" style="background-image: url('assets/white_bleached.webp');" data-img="assets/white_bleached.webp" data-name="White Bleached"></div>
+                </div>
+                <p id="bordering-color-name" class="color-name-label"></p> </div>
+            <div class="customization-group">
+                <h4>Sashing</h4>
+                <div class="color-options" data-target="grid-2">
+                    <div class="color-swatch" style="background-image: url('assets/jersey-blue.webp');" data-img="assets/jersey-blue.webp" data-name="Jersey Blue"></div>
+                    <div class="color-swatch" style="background-image: url('assets/jersey-red.webp');" data-img="assets/jersey-red.webp" data-name="Jersey Red"></div>
+                    <div class="color-swatch" style="background-image: url('assets/azure.webp');" data-img="assets/azure.webp" data-name="Azure"></div>
+                    <div class="color-swatch" style="background-image: url('assets/basil.webp');" data-img="assets/basil.webp" data-name="Basil"></div>
+                    <div class="color-swatch" style="background-image: url('assets/bettys_red.webp');" data-img="assets/bettys_red.webp" data-name="Betty's Red"></div>
+                    <div class="color-swatch" style="background-image: url('assets/black.webp');" data-img="assets/black.webp" data-name="Black"></div>
+                    <div class="color-swatch" style="background-image: url('assets/burgundy.webp');" data-img="assets/burgundy.webp" data-name="Burgundy"></div>
+                    <div class="color-swatch" style="background-image: url('assets/iron.webp');" data-img="assets/iron.webp" data-name="Iron"></div>
+                    <div class="color-swatch" style="background-image: url('assets/lemon.webp');" data-img="assets/lemon.webp" data-name="Lemon"></div>
+                    <div class="color-swatch" style="background-image: url('assets/metal.webp');" data-img="assets/metal.webp" data-name="Metal"></div>
+                    <div class="color-swatch" style="background-image: url('assets/white_bleached.webp');" data-img="assets/white_bleached.webp" data-name="White Bleached"></div>
+                </div>
+                <p id="sashing-color-name" class="color-name-label"></p> </div>
+            <div class="customization-group">
+                <h4>Backing</h4>
+                <div class="color-options" data-target="backing">
+                    <div class="color-swatch" style="background-image: url('assets/grey.webp');" data-img="assets/grey.webp" data-name="Grey"></div>
+                    <div class="color-swatch" style="background-image: url('assets/midnight.webp');" data-img="assets/midnight.webp" data-name="Midnight"></div>
+                </div>
+                <div id="backing-preview">
+                    <img src="" alt="Backing Preview"/>
+                    <p id="backing-color-name" class="color-name-label"></p> </div>
+            </div>
+            <!-- <div class="customization-group">
+                 <div class="btn-contain">
+                     <button id="download-btn">Download Design</button>
+                 </div>
+            </div> -->
+            
+        </div> </div> <div class="bottom-section">
+         <h4>Available Squares (Drag to grid above)</h4>
+        <div class="grid grid-1">
+            </div>
+    </div>
+
+    <div class="upload-section">
+        <h4>Upload Your Squares</h4>
+        <input type="file" id="image-upload" accept="image/*" style="display: none;" multiple />
+        <button id="upload-trigger-btn">
+            <span class="loading-wheel"></span>
+            <span class="btn-text">Upload Image(s)</span>
+        </button>
+         <small>Tip: Select multiple images at once!</small>
+    </div>
+
+
+    <script src="js/grid.js" defer></script>
+
+
+</body>
+</html>

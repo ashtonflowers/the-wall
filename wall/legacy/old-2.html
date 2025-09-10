@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JB Customizer</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/web-animations/2.3.2/web-animations.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/haltu/muuri@0.9.5/dist/muuri.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ... (Your existing CSS rules remain unchanged) ... */
+    body {
+      margin: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 50px;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    .header{
+        text-align: center;
+    }
+
+    h1{
+        font-weight: 800;
+        font-size: 60px;
+        text-decoration: underline;
+        text-underline-offset: 20px;
+    }
+
+    .top-section {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 60px;
+      background-color: #fff;
+    }
+
+    .grid-container {
+      width: 470px;
+      height: 535px;
+      padding: 10px;
+      background: #001f4d; /* Default or initial border */
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+      /* Added transition for smoother background change */
+      transition: background-image 0.3s ease;
+    }
+
+    .customization-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    .customization-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .customization-group h4 {
+      margin: 0;
+      font-size: 1.1em;
+      color: #1a2d5a;
+    }
+
+    .color-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .color-swatch {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 1px 1px 6px black;
+      border-spacing: 3px;
+      background-size: cover; /* Moved from specific rule */
+      background-position: center; /* Moved from specific rule */
+       border: 2px solid transparent; /* Add base border for transition */
+       transition: border-color 0.2s ease, box-shadow 0.2s ease; /* Smooth transition for active state */
+    }
+
+    /* Style for the selected swatch */
+    .color-swatch.active {
+       border-color: #333; /* Use border for outline */
+       box-shadow: 0 0 8px rgba(0, 0, 0, 0.5); /* Enhance shadow */
+    }
+
+    /* Style for the color name label */
+    .color-name-label {
+        font-size: 0.9em;
+        color: #555;
+        margin-top: 5px; /* Add a little space above the label */
+        min-height: 1.2em; /* Prevent layout shift when text appears */
+        font-weight: bold;
+    }
+
+
+    .bottom-section {
+      width: 90%;
+      padding: 20px;
+      background-color: #f0f0f0;
+      border: 2px solid #ccc;
+    }
+
+    .grid {
+      position: relative;
+      min-height: 440px;
+    }
+
+    .item {
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      line-height: 100px; /* Might need adjustment depending on content */
+      margin: 5px;
+      z-index: 1;
+    }
+
+    .item.muuri-item-hidden {
+      z-index: 0;
+    }
+
+    .item.muuri-item-releasing {
+      z-index: 2;
+    }
+
+    .item.muuri-item-dragging {
+      z-index: 3;
+    }
+
+    .item-content {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      background: red; /* Default, might be overridden */
+      font-size: 30px;
+      color: white;
+      cursor: grab;
+      background-size: cover; /* Ensure uploaded images cover the area */
+      background-position: center; /* Center uploaded images */
+    }
+
+    .grid-2 .item-content {
+      /* background: green; Default, might be overridden */
+      /* Remove default background if items have their own */
+    }
+
+    .item.muuri-item-dragging .item-content,
+    .item.muuri-item-releasing .item-content {
+      /* You might want a visual indicator for dragging */
+      /* Example: opacity: 0.8; */
+       box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+    }
+
+    .grid-2.muuri {
+      width: 400px;
+      min-height: 480px;
+      /* background-color: #d03b28; Set via JS */
+      margin: auto;
+      top: 25px;
+      /* Added transition for smoother background change */
+      transition: background-image 0.3s ease;
+    }
+
+    #backing-preview img {
+      max-width: 150px; /* Initial max-width */
+      display: none;
+      margin-top: 10px; /* Add space if needed */
+      border: 1px solid #ccc; /* Optional: add a border */
+    }
+
+    .uploaded-item .item-content {
+        /* Already styled above */
+    }
+
+    button {
+        padding: 10px 20px;
+        background-color: #1a2d5a;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 6px;
+        font-size: 16px;
+        transition: background-color 0.2s ease; /* Smooth hover */
+    }
+
+    button:hover {
+        background-color: #003f87;
+    }
+
+    button:disabled { /* Style for disabled upload button */
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+
+    .btn-contain{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px; /* Add gap between instructions and button */
+    }
+
+    .btn-contain p{
+      text-align: center;
+    }
+
+    .loading-wheel {
+      width: 16px; /* Smaller size */
+      height: 16px;
+      margin-right: 8px;
+      vertical-align: middle;
+      border: 2px solid #f3f3f3; /* Light grey */
+      border-top: 2px solid #3498db; /* Blue */
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      display: none; /* Hidden by default */
+    }
+
+    #backing-preview img {
+        max-width: 95px !important;
+    }
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+    @media (max-width: 768px) {
+      .top-section {
+        flex-direction: column-reverse;
+        align-items: center;
+
+      }
+      .grid-container {
+        width: 375px;
+        height: 415px;
+      }
+
+      .grid-2.muuri {
+        width: 300px;
+        min-height: 360px;
+      }
+
+      .item {
+        width: 50px;
+        height: 50px;
+      }
+
+      .grid {
+          position: relative;
+          min-height: unset; /* Adjust if needed */
+      }
+
+      h1 {
+          font-size: 40px; /* Adjust header size */
+          text-underline-offset: 10px;
+      }
+      .customization-panel {
+          width: 90%; /* Make panel wider on small screens */
+      }
+    }
+  </style>
+
+</head>
+<body>
+
+  <div class="header">
+    <h1>MAGIC WALL</h1>
+    <p>Rearrange the JB Squares to create your perfect blanket!</p>
+  </div>
+
+  <div class="top-section">
+    <div class="grid-container">
+      <div class="grid grid-2">
+        </div>
+    </div>
+
+    <div class="customization-panel">
+      <div class="customization-group">
+        <h4>Bordering</h4>
+        <div class="color-options" data-target="grid-container">
+          <div class="color-swatch" style="background-image: url('assets/jersey-blue.webp');" data-img="assets/jersey-blue.webp" data-name="Jersey Blue"></div>
+          <div class="color-swatch" style="background-image: url('assets/jersey-red.webp');" data-img="assets/jersey-red.webp" data-name="Jersey Red"></div>
+          <div class="color-swatch" style="background-image: url('assets/azure.webp');" data-img="assets/azure.webp" data-name="Azure"></div>
+          <div class="color-swatch" style="background-image: url('assets/basil.webp');" data-img="assets/basil.webp" data-name="Basil"></div>
+          <div class="color-swatch" style="background-image: url('assets/bettys_red.webp');" data-img="assets/bettys_red.webp" data-name="Betty's Red"></div>
+          <div class="color-swatch" style="background-image: url('assets/black.webp');" data-img="assets/black.webp" data-name="Black"></div>
+          <div class="color-swatch" style="background-image: url('assets/burgundy.webp');" data-img="assets/burgundy.webp" data-name="Burgundy"></div>
+          <div class="color-swatch" style="background-image: url('assets/iron.webp');" data-img="assets/iron.webp" data-name="Iron"></div>
+          <div class="color-swatch" style="background-image: url('assets/lemon.webp');" data-img="assets/lemon.webp" data-name="Lemon"></div>
+          <div class="color-swatch" style="background-image: url('assets/metal.webp');" data-img="assets/metal.webp" data-name="Metal"></div>
+          <div class="color-swatch" style="background-image: url('assets/white_bleached.webp');" data-img="assets/white_bleached.webp" data-name="White Bleached"></div>
+        </div>
+        <p id="bordering-color-name" class="color-name-label">Selected: Jersey Blue</p> </div>
+
+      <div class="customization-group">
+        <h4>Sashing</h4>
+        <div class="color-options" data-target="grid-2">
+          <div class="color-swatch" style="background-image: url('assets/jersey-blue.webp');" data-img="assets/jersey-blue.webp" data-name="Jersey Blue"></div>
+          <div class="color-swatch" style="background-image: url('assets/jersey-red.webp');" data-img="assets/jersey-red.webp" data-name="Jersey Red"></div>
+          <div class="color-swatch" style="background-image: url('assets/azure.webp');" data-img="assets/azure.webp" data-name="Azure"></div>
+          <div class="color-swatch" style="background-image: url('assets/basil.webp');" data-img="assets/basil.webp" data-name="Basil"></div>
+          <div class="color-swatch" style="background-image: url('assets/bettys_red.webp');" data-img="assets/bettys_red.webp" data-name="Betty's Red"></div>
+          <div class="color-swatch" style="background-image: url('assets/black.webp');" data-img="assets/black.webp" data-name="Black"></div>
+          <div class="color-swatch" style="background-image: url('assets/burgundy.webp');" data-img="assets/burgundy.webp" data-name="Burgundy"></div>
+          <div class="color-swatch" style="background-image: url('assets/iron.webp');" data-img="assets/iron.webp" data-name="Iron"></div>
+          <div class="color-swatch" style="background-image: url('assets/lemon.webp');" data-img="assets/lemon.webp" data-name="Lemon"></div>
+          <div class="color-swatch" style="background-image: url('assets/metal.webp');" data-img="assets/metal.webp" data-name="Metal"></div>
+          <div class="color-swatch" style="background-image: url('assets/white_bleached.webp');" data-img="assets/white_bleached.webp" data-name="White Bleached"></div>
+        </div>
+         <p id="sashing-color-name" class="color-name-label">Selected: Jersey Red</p> </div>
+
+      <div class="customization-group">
+        <h4>Backing</h4>
+        <div class="color-options" data-target="backing">
+           <div class="color-swatch" style="background-image: url('assets/grey.webp');" data-img="assets/grey.webp" data-name="Grey"></div>
+          <div class="color-swatch" style="background-image: url('assets/midnight.webp');" data-img="assets/midnight.webp" data-name="Midnight"></div>
+        </div>
+        <div id="backing-preview" style="margin-top: 15px;">
+          <img src="" alt="Backing Preview" style="max-width: 150px; display: none;" />
+           <p id="backing-color-name" class="color-name-label"></p>
+        </div>
+      </div>
+
+      <div class="customization-group"> <div class="instructions" style="font-size: 14px; line-height: 1.6;">
+            <p><strong>How to use the MAGIC WALL:</strong></p>
+            <ol>
+              <li>Upload your own squares using the upload button at the bottom of the page.</li>
+              <li>Drag squares from the pool below into the grid above.</li>
+              <li>Choose Bordering, Sashing, and Backing colors.</li>
+              <li>Click "Download" to save your design then email to <a href="mailto:jasonricart@jerseyblanket.com">jasonricart@jerseyblanket.com</a>!</li>
+            </ol>
+          </div>
+          <div class="btn-contain">
+              <button id="download-btn">Download Design</button>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-section">
+    <h4>Available Squares (Drag to grid above)</h4>
+    <div class="grid grid-1">
+      </div>
+  </div>
+
+  <div class="customization-group" style="align-items: center; margin-top: 20px;"> <h4>Upload Your Squares</h4>
+    <input type="file" id="image-upload" accept="image/*" style="display: none;" multiple />
+    <button id="upload-trigger-btn">
+      <span class="loading-wheel"></span> <span class="btn-text">Upload Image(s)</span>
+    </button>
+     <small>Tip: Upload multiple images at once!</small>
+  </div>
+
+  <script>
+    const maxGrid2Items = 3; // The actual limit for the top grid
+
+    // Initialize Muuri grid 1
+    const grid1 = new Muuri('.grid-1', {
+      dragEnabled: true,
+      dragContainer: document.body,
+      dragSort: () => [grid1, grid2] // Allow dragging between grid1 and grid2
+    });
+
+    // Initialize Muuri grid 2 (No dragSortPredicate)
+    const grid2 = new Muuri('.grid-2', {
+      dragEnabled: true,
+      dragContainer: document.body,
+      dragSort: () => [grid1, grid2] // Allow dragging between grid1 and grid2
+    });
+
+    // Add dragReleaseEnd listener to grid2
+    grid2.on('dragReleaseEnd', function (item) {
+        const finalItemsInGrid2 = grid2.getItems().length;
+        console.log(`dragReleaseEnd on grid2: Final count = ${finalItemsInGrid2}`);
+        console.log(`Checking limit: ${finalItemsInGrid2} > ${maxGrid2Items} ?`);
+
+        // Check if the grid is now over the limit
+        if (finalItemsInGrid2 > maxGrid2Items) {
+            console.warn(`Post-Drop Check: Grid 2 has ${finalItemsInGrid2}/${maxGrid2Items}. Moving item back.`);
+
+            // Ensure the item is still registered with grid2 before sending
+            if (item.getGrid() === grid2) {
+                try {
+                    console.log(`Attempting move back using grid2.send()...`);
+                    // Send the Muuri 'item' object FROM grid2 TO grid1
+                    grid2.send(item, grid1, -1, { layoutSender: false }); // Send to end of grid1
+
+                    // Explicitly layout the receiving grid
+                    grid1.layout();
+
+                    console.log("Item sent back to grid1 via dragReleaseEnd.");
+
+                } catch (e) {
+                    console.error("Error sending item back in dragReleaseEnd:", e);
+                    // Force layout sync if error occurs
+                    grid1.layout();
+                    grid2.layout();
+                }
+            } else {
+                 console.error("dragReleaseEnd Error: Item to be moved back is not currently associated with grid2.");
+                 // Force layout sync as state might be inconsistent
+                 grid1.layout();
+                 grid2.layout();
+            }
+        }
+    });
+
+
+    // --- Color Picker Logic ---
+    // (This section remains the same)
+    document.querySelectorAll('.color-options').forEach(group => {
+      group.addEventListener('click', function (e) {
+        if (!e.target.classList.contains('color-swatch')) return;
+        const swatch = e.target;
+        const imgUrl = swatch.dataset.img;
+        const target = group.dataset.target;
+        const colorName = swatch.dataset.name || 'Unknown Color';
+        group.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+        swatch.classList.add('active');
+        if (target === "grid-container") {
+          const container = document.querySelector('.grid-container');
+          container.style.backgroundImage = `url('${imgUrl}')`;
+          container.style.backgroundSize = 'cover';
+          container.style.backgroundRepeat = 'no-repeat';
+          container.style.backgroundPosition = 'center';
+          document.getElementById('bordering-color-name').textContent = `Selected: ${colorName}`;
+        } else if (target === "grid-2") {
+          const sashing = document.querySelector('.grid-2');
+          sashing.style.backgroundImage = `url('${imgUrl}')`;
+          sashing.style.backgroundSize = 'cover';
+          sashing.style.backgroundRepeat = 'no-repeat';
+          sashing.style.backgroundPosition = 'center';
+          document.getElementById('sashing-color-name').textContent = `Selected: ${colorName}`;
+        } else if (target === "backing") {
+          const preview = document.querySelector('#backing-preview img');
+          preview.src = imgUrl;
+          preview.style.display = 'block';
+          document.getElementById('backing-color-name').textContent = `Selected: ${colorName}`;
+        }
+      });
+    });
+
+    // --- Set Default Swatches and Labels on Page Load ---
+    // (This section remains the same)
+     document.addEventListener('DOMContentLoaded', function () {
+        // Fix potential typo in original code for backing label ID if it exists
+        const backingLabel = document.getElementById('backing-color-name');
+
+        function applySwatchStyle(swatch, target) {
+             if (!swatch) return;
+            swatch.classList.add('active');
+            const imgUrl = swatch.dataset.img;
+            const colorName = swatch.dataset.name || 'Default';
+            if (target === "grid-container") {
+                const container = document.querySelector('.grid-container');
+                container.style.backgroundImage = `url('${imgUrl}')`;
+                container.style.backgroundSize = 'cover';
+                container.style.backgroundRepeat = 'no-repeat';
+                container.style.backgroundPosition = 'center';
+                document.getElementById('bordering-color-name').textContent = `Selected: ${colorName}`;
+            } else if (target === "grid-2") {
+                const sashing = document.querySelector('.grid-2');
+                sashing.style.backgroundImage = `url('${imgUrl}')`;
+                sashing.style.backgroundSize = 'cover';
+                sashing.style.backgroundRepeat = 'no-repeat';
+                sashing.style.backgroundPosition = 'center';
+                document.getElementById('sashing-color-name').textContent = `Selected: ${colorName}`;
+            } else if (target === "backing") {
+                const preview = document.querySelector('#backing-preview img');
+                preview.src = imgUrl;
+                preview.style.display = 'block';
+                if (backingLabel) { // Check if label exists before setting text
+                   backingLabel.textContent = `Selected: ${colorName}`;
+                }
+            }
+        }
+        const borderingGroup = document.querySelector('.color-options[data-target="grid-container"]');
+        const defaultBorderingSwatch = borderingGroup?.querySelector('.color-swatch[data-img="assets/jersey-blue.webp"]') || borderingGroup?.querySelector('.color-swatch');
+        applySwatchStyle(defaultBorderingSwatch, "grid-container");
+        const sashingGroup = document.querySelector('.color-options[data-target="grid-2"]');
+        const defaultSashingSwatch = sashingGroup?.querySelector('.color-swatch[data-img="assets/jersey-red.webp"]') || sashingGroup?.querySelector('.color-swatch');
+        applySwatchStyle(defaultSashingSwatch, "grid-2");
+        const backingGroup = document.querySelector('.color-options[data-target="backing"]');
+        const defaultBackingSwatch = backingGroup?.querySelector('.color-swatch');
+         applySwatchStyle(defaultBackingSwatch, "backing");
+    });
+
+    // --- File Upload Logic ---
+    // (This section remains the same)
+    const uploadTriggerButton = document.getElementById('upload-trigger-btn');
+    const fileInput = document.getElementById('image-upload');
+    const loadingWheel = uploadTriggerButton.querySelector('.loading-wheel');
+    const btnText = uploadTriggerButton.querySelector('.btn-text');
+    const originalBtnText = btnText.textContent;
+    uploadTriggerButton.addEventListener('click', () => { fileInput.click(); });
+    fileInput.addEventListener('change', function (e) {
+      const files = e.target.files;
+      if (files.length === 0) return;
+      loadingWheel.style.display = 'inline-block';
+      btnText.textContent = `Processing ${files.length} image(s)...`;
+      uploadTriggerButton.disabled = true;
+      let processedCount = 0;
+      const totalFiles = files.length;
+      function checkCompletion() {
+        processedCount++;
+        if (processedCount === totalFiles) {
+          loadingWheel.style.display = 'none';
+          btnText.textContent = originalBtnText;
+          uploadTriggerButton.disabled = false;
+          fileInput.value = '';
+          // console.log("All images processed and added."); // Reduced logging
+        } else { btnText.textContent = `Processing ${processedCount + 1} of ${totalFiles}...`; }
+      }
+      Array.from(files).forEach(file => {
+        if (!file.type.match('image.*')) { console.warn(`Skipping non-image file: ${file.name}`); checkCompletion(); return; }
+        compressImageFile(file, 0.7, 200, 200)
+          .then(compressedImageUrl => {
+            const newItem = document.createElement('div');
+            newItem.classList.add('item', 'uploaded-item');
+            newItem.innerHTML = `<div class="item-content" style="background-image: url('${compressedImageUrl}');"></div>`;
+            grid1.add([newItem], { index: 0 });
+            checkCompletion();
+          }).catch(error => { console.error(`Error processing file ${file.name}:`, error); checkCompletion(); });
+      });
+    });
+
+    // --- Image Compression Function ---
+    // (This section remains the same)
+    function compressImageFile(file, quality = 0.7, maxWidth = 800, maxHeight = 800) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = function () {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            let width = img.width; let height = img.height;
+            if (width > maxWidth || height > maxHeight) { const ratio = Math.min(maxWidth / width, maxHeight / height); width = Math.round(width * ratio); height = Math.round(height * ratio); }
+            canvas.width = width; canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            let compressedDataUrl;
+             try { compressedDataUrl = canvas.toDataURL('image/webp', quality); if (!compressedDataUrl || compressedDataUrl.length < 100) { throw new Error("WEBP conversion failed"); } } catch (e) { compressedDataUrl = canvas.toDataURL('image/jpeg', quality); }
+            resolve(compressedDataUrl);
+          };
+          img.onerror = function (error) { reject(new Error("Failed to load image")); }; };
+        reader.onerror = function(error) { reject(new Error("Failed to read file")); };
+        reader.readAsDataURL(file); });
+    }
+
+    // --- Download Button Logic ---
+    // (This section remains the same)
+    document.getElementById('download-btn').addEventListener('click', function () {
+      const elementToCapture = document.querySelector('.top-section');
+       if (!elementToCapture) { console.error("Element to capture not found!"); alert("Error: Could not find the design area."); return; }
+       // console.log("Starting screen capture..."); // Reduced logging
+      const options = { backgroundColor: '#ffffff', useCORS: true, scale: window.devicePixelRatio * 1.5, logging: false, // Turned off html2canvas logging
+         onclone: (clonedDoc) => { const btn = clonedDoc.getElementById('download-btn'); if (btn) btn.style.display = 'none'; const inst = clonedDoc.querySelector('.instructions'); if (inst) inst.style.display = 'none'; } };
+      html2canvas(elementToCapture, options).then(canvas => {
+        // console.log("Canvas generated."); // Reduced logging
+         const link = document.createElement('a'); link.download = 'jersey-blanket-design.png';
+         try { link.href = canvas.toDataURL('image/png'); link.click(); /*console.log("Download initiated.");*/ } catch (e) { console.error("Error creating download URL:", e); alert("Error creating download file."); }
+      }).catch(err => { console.error("html2canvas failed:", err); alert("Error generating image."); });
+    });
+
+  </script>
+
+</body>
+</html>
