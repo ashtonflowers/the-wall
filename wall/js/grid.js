@@ -70,36 +70,75 @@ function initializeGrids() {
      try {
         grid1 = new Muuri(grid1Element, { dragEnabled: true, dragContainer: document.body, dragSort: () => [grid1, grid2] });
         grid2 = new Muuri(grid2Element, { dragEnabled: true, dragContainer: document.body, dragSort: () => [grid1, grid2] });
-        grid2.on('dragReleaseEnd', function (item) { /* ... Limit logic ... */
+        const saveOnEnd = () => saveState();
+        grid1.on('dragReleaseEnd', saveOnEnd);
+        grid2.on('dragReleaseEnd', function (item) {
             const finalItemsInGrid2 = grid2.getItems().length;
             if (finalItemsInGrid2 > maxGrid2Items) {
                 if (item.getGrid() === grid2) {
-                    try { grid2.send(item, grid1, -1, { layoutSender: false }); grid1.layout(); }
-                    catch (e) { console.error("[Muuri] Error sending item back:", e); grid1.layout(); grid2.layout(); }
-                } else { console.warn("[Muuri] Item not in grid2 on check."); grid1.layout(); grid2.layout(); }
+                    try {
+                        grid2.send(item, grid1, -1, { layoutSender: false });
+                        grid1.layout();
+                    }
+                    catch (e) {
+                        console.error("[Muuri] Error sending item back:", e);
+                        grid1.layout();
+                        grid2.layout();
+                    }
+                } else {
+                    console.warn("[Muuri] Item not in grid2 on check.");
+                    grid1.layout();
+                    grid2.layout();
+                }
             }
+            saveState();
         });
          // console.log("[Muuri] Initialized.");
      } catch (muuriError) { console.error("[Muuri] Error initializing:", muuriError); }
 }
 
 function initializeColorPickers() {
-    // console.log("[Color Picker] Initializing...");
     document.querySelectorAll('.color-options').forEach(group => {
         if (!group) return;
-        group.addEventListener('click', function (e) { /* ... Color picker logic ... */
-            if (!e.target.classList.contains('color-swatch')) return;
-            const swatch = e.target; const imgUrl = swatch.dataset.img; const target = group.dataset.target; const colorName = swatch.dataset.name || '?';
-            group.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active')); swatch.classList.add('active'); // Adds .active class
-            const container = document.querySelector('.grid-container'); const sashing = document.querySelector('.grid-2'); const previewImg = document.querySelector('#backing-preview img');
-            const borderingLabel = document.getElementById('bordering-color-name'); const sashingLabel = document.getElementById('sashing-color-name'); const backingLabel = document.getElementById('backing-color-name');
-            // Update HTML text content (this text is NOT used directly in download V13+)
-            if (target === "grid-container" && container) { container.style.backgroundImage = `url('${imgUrl}')`; if (borderingLabel) borderingLabel.textContent = `Selected: ${colorName}`; }
-            else if (target === "grid-2" && sashing) { sashing.style.backgroundImage = `url('${imgUrl}')`; if(sashingLabel) sashingLabel.textContent = `Selected: ${colorName}`; }
-            else if (target === "backing" && previewImg) { previewImg.src = imgUrl; previewImg.style.display = 'block'; if(backingLabel) backingLabel.textContent = `Selected: ${colorName}`; }
-       });
+        group.addEventListener('click', function(e) {
+            // Find the swatch-container, whether the click was on the container, swatch, or name
+            const swatchContainer = e.target.closest('.swatch-container');
+            if (!swatchContainer) return;
+
+            const swatch = swatchContainer.querySelector('.color-swatch');
+            if (!swatch) return;
+
+            const imgUrl = swatch.dataset.img;
+            const target = group.dataset.target;
+            const colorName = swatch.dataset.name || '?';
+
+            // Handle active state
+            group.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+            swatch.classList.add('active');
+
+            const container = document.querySelector('.grid-container');
+            const sashing = document.querySelector('.grid-2');
+            const previewImg = document.querySelector('#backing-preview img');
+
+            // The separate color name labels are no longer the primary display
+            const borderingLabel = document.getElementById('bordering-color-name');
+            const sashingLabel = document.getElementById('sashing-color-name');
+            const backingLabel = document.getElementById('backing-color-name');
+
+            if (target === "grid-container" && container) {
+                container.style.backgroundImage = `url('${imgUrl}')`;
+                if (borderingLabel) borderingLabel.textContent = `Selected: ${colorName}`;
+            } else if (target === "grid-2" && sashing) {
+                sashing.style.backgroundImage = `url('${imgUrl}')`;
+                if (sashingLabel) sashingLabel.textContent = `Selected: ${colorName}`;
+            } else if (target === "backing" && previewImg) {
+                previewImg.src = imgUrl;
+                previewImg.style.display = 'block';
+                if (backingLabel) backingLabel.textContent = `Selected: ${colorName}`;
+            }
+            saveState();
+        });
     });
-    // console.log("[Color Picker] Initialized.");
 }
 
 function initializeDefaults() {
@@ -113,32 +152,172 @@ function initializeDefaults() {
 }
 
 function initializeUpload() {
-    // console.log("[Upload] Initializing...");
-     const uploadTriggerButton = document.getElementById('upload-trigger-btn'); const fileInput = document.getElementById('image-upload');
-     if (!uploadTriggerButton || !fileInput) { console.error("[Upload] Elements not found!"); return; }
-     const loadingWheel = uploadTriggerButton.querySelector('.loading-wheel'); const btnText = uploadTriggerButton.querySelector('.btn-text'); const originalBtnText = btnText?.textContent || 'Upload';
-     uploadTriggerButton.addEventListener('click', () => { fileInput.click(); });
-     fileInput.addEventListener('change', function (e) { /* ... Upload change handler ... */
-         const files = e.target.files; if (files.length === 0) return;
-         if(loadingWheel) loadingWheel.style.display = 'inline-block'; if(btnText) btnText.textContent = `Processing ${files.length}...`; uploadTriggerButton.disabled = true;
-         let processedCount = 0; const totalFiles = files.length;
-         function checkCompletion() {
-             processedCount++; if (processedCount === totalFiles) { if(loadingWheel) loadingWheel.style.display = 'none'; if(btnText) btnText.textContent = originalBtnText; uploadTriggerButton.disabled = false; fileInput.value = ''; } else { if(btnText) btnText.textContent = `Processing ${processedCount + 1}/${totalFiles}...`; }
-         }
-         Array.from(files).forEach((file) => { // Removed index as it wasn't used here
-             if (!file.type.match('image.*')) { console.warn(`[Upload] Skipping non-image: ${file.name}`); checkCompletion(); return; }
-             compressImageFile(file).then(compressedImageUrl => {
-                 const newItem = document.createElement('div'); newItem.classList.add('item', 'uploaded-item'); newItem.id = `muuri-item-upload-${Date.now()}-${itemIdCounter++}`; newItem.innerHTML = `<div class="item-content" style="background-image: url('${compressedImageUrl}');"></div>`;
-                 if(grid1?.add) { try { grid1.add(newItem, { index: 0 }); } catch (addError) { console.error("[Upload] grid1.add Error:", addError); } } else { console.error("[Upload] Grid1 invalid."); } checkCompletion();
-             }).catch(error => { console.error(`[Upload] Error processing ${file.name}:`, error); checkCompletion(); });
-         });
-     });
-     // console.log("[Upload] Initialized.");
+    const uploadTriggerButton = document.getElementById('upload-trigger-btn');
+    const fileInput = document.getElementById('image-upload');
+    const availableSquaresGrid = document.querySelector('.grid-1');
+    const uploadSection = document.querySelector('.upload-section');
+
+    if (!uploadTriggerButton || !fileInput || !availableSquaresGrid || !uploadSection) {
+        console.error("[Upload] Essential elements not found!");
+        return;
+    }
+
+    const loadingWheel = uploadTriggerButton.querySelector('.loading-wheel');
+    const btnText = uploadTriggerButton.querySelector('.btn-text');
+    const originalBtnText = btnText?.textContent || 'Upload';
+
+    // Reusable function to handle file processing
+    const handleFiles = (files) => {
+        if (files.length === 0) return;
+
+        if (loadingWheel) loadingWheel.style.display = 'inline-block';
+        if (btnText) btnText.textContent = `Processing ${files.length}...`;
+        uploadTriggerButton.disabled = true;
+
+        let processedCount = 0;
+        const totalFiles = files.length;
+
+        const checkCompletion = () => {
+            processedCount++;
+            if (processedCount === totalFiles) {
+                if (loadingWheel) loadingWheel.style.display = 'none';
+                if (btnText) btnText.textContent = originalBtnText;
+                uploadTriggerButton.disabled = false;
+                fileInput.value = ''; // Clear the file input
+            } else {
+                if (btnText) btnText.textContent = `Processing ${processedCount + 1}/${totalFiles}...`;
+            }
+        };
+
+        Array.from(files).forEach((file) => {
+            if (!file.type.match('image.*')) {
+                console.warn(`[Upload] Skipping non-image: ${file.name}`);
+                checkCompletion();
+                return;
+            }
+            compressImageFile(file).then(compressedImageUrl => {
+                const newItem = document.createElement('div');
+                newItem.classList.add('item', 'uploaded-item');
+                newItem.id = `muuri-item-upload-${Date.now()}-${itemIdCounter++}`;
+                newItem.innerHTML = `<div class="item-content" style="background-image: url('${compressedImageUrl}');"></div>`;
+                if (grid1?.add) {
+                    try {
+                        grid1.add(newItem, { index: 0 });
+                    } catch (addError) {
+                        console.error("[Upload] grid1.add Error:", addError);
+                    }
+                } else {
+                    console.error("[Upload] Grid1 invalid.");
+                }
+                checkCompletion();
+                saveState();
+            }).catch(error => {
+                console.error(`[Upload] Error processing ${file.name}:`, error);
+                checkCompletion();
+            });
+        });
+    };
+
+    // Event listener for the hidden file input
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
+
+    // Event listener for the upload button
+    uploadTriggerButton.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // --- Drag and Drop Logic ---
+    const dropZones = [availableSquaresGrid, uploadSection];
+
+    dropZones.forEach(zone => {
+        zone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            zone.classList.add('drag-over');
+        });
+
+        zone.addEventListener('dragover', (e) => {
+            e.preventDefault(); // This is necessary to allow a drop
+            zone.classList.add('drag-over');
+        });
+
+        zone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+        });
+
+        zone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            zone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
+    });
 }
 
 function compressImageFile(file, quality = 0.7, maxWidth = 800, maxHeight = 800) { /* ... Keep compress logic ... */
       return new Promise((resolve, reject) => { const r=new FileReader();r.onload=(e)=>{const i=new Image();i.src=e.target.result;i.onload=()=>{const c=document.createElement('canvas'),x=c.getContext('2d');let w=i.width,h=i.height;if(w>maxWidth||h>maxHeight){const rt=Math.min(maxWidth/w,maxHeight/h);w=Math.round(w*rt);h=Math.round(h*rt);}c.width=w;c.height=h;x.drawImage(i,0,0,w,h);let d;try{d=c.toDataURL('image/webp',quality);if(!d||d.length<100)throw 0;}catch(e){d=c.toDataURL('image/jpeg',quality);}resolve(d);};i.onerror=()=>reject(new Error("Img load fail"));};r.onerror=()=>reject(new Error("File read fail"));r.readAsDataURL(file);});
 }
+
+// --- Save and Load State ---
+const saveState = () => {
+    try {
+        const state = {
+            grid1: grid1.getItems().map(item => item.getElement().querySelector('.item-content').style.backgroundImage),
+            grid2: grid2.getItems().map(item => item.getElement().querySelector('.item-content').style.backgroundImage),
+            bordering: document.querySelector('.customization-group:nth-of-type(1) .color-swatch.active')?.dataset.img,
+            sashing: document.querySelector('.customization-group:nth-of-type(2) .color-swatch.active')?.dataset.img,
+            backing: document.querySelector('.customization-group:nth-of-type(3) .color-swatch.active')?.dataset.img,
+            gridSize: currentSizeParam
+        };
+        localStorage.setItem('jerseyBlanketState', JSON.stringify(state));
+    } catch (e) {
+        console.error("Error saving state:", e);
+    }
+};
+
+const loadState = () => {
+    try {
+        const savedState = localStorage.getItem('jerseyBlanketState');
+        if (savedState) {
+            if (confirm("Welcome back! Would you like to restore your previous design?")) {
+                const state = JSON.parse(savedState);
+
+                // Check if the grid size matches
+                if (state.gridSize && state.gridSize !== currentSizeParam) {
+                    alert(`Your saved design was for a ${state.gridSize} grid, but you are currently on a ${currentSizeParam} grid. Please select the correct grid size to restore your design.`);
+                    return;
+                }
+
+                // Clear existing items
+                grid1.remove(grid1.getItems(), {removeElements: true});
+                grid2.remove(grid2.getItems(), {removeElements: true});
+
+                // Restore items
+                state.grid1.forEach(bgImg => {
+                    const newItem = document.createElement('div');
+                    newItem.classList.add('item', 'uploaded-item');
+                    newItem.innerHTML = `<div class="item-content" style="background-image: ${bgImg};"></div>`;
+                    grid1.add(newItem);
+                });
+                state.grid2.forEach(bgImg => {
+                    const newItem = document.createElement('div');
+                    newItem.classList.add('item', 'uploaded-item');
+                    newItem.innerHTML = `<div class="item-content" style="background-image: ${bgImg};"></div>`;
+                    grid2.add(newItem);
+                });
+
+                // Restore colors
+                if (state.bordering) document.querySelector(`.color-swatch[data-img="${state.bordering}"]`)?.click();
+                if (state.sashing) document.querySelector(`.color-swatch[data-img="${state.sashing}"]`)?.click();
+                if (state.backing) document.querySelector(`.color-swatch[data-img="${state.backing}"]`)?.click();
+            }
+        }
+    } catch (e) {
+        console.error("Error loading state:", e);
+    }
+};
 
 
 // --- Download Button Logic ---
@@ -263,7 +442,7 @@ function initializeDownload() {
             if (borderSwatchImgUrl) { // Keep check if depending on URL for logic later
                 console.log(`[Download] Found Border Swatch URL: ${borderSwatchImgUrl}`); // Log URL found
                  drawingPromises.push(loadImage(borderSwatchImgUrl, "BorderSwatch").then(img => {
-                     if (!img) { console.warn("[Download] Border Swatch image failed to load."); }
+                     if (!img) { console.warn("[Download] Border Swatch image failed to to load."); }
                      // *** NO SWATCH DRAWING HERE ***
                  }));
             } else { console.warn("[Download] Border Swatch URL not found."); }
@@ -286,7 +465,7 @@ function initializeDownload() {
             currentY += lineSpacing; // Move to next line
 
             // --- Backing Line (Text Only) ---
-            if (backingSwatchImgUrl) {
+            if (backingSwatchUrlMatch) {
                 console.log(`[Download] Found Backing Swatch URL: ${backingSwatchImgUrl}`);
                 drawingPromises.push(loadImage(backingSwatchImgUrl, "BackingSwatch").then(img => {
                     if (!img) { console.warn("[Download] Backing Swatch image failed to load."); }
@@ -349,6 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initializeDefaults();
         initializeUpload();
         initializeDownload(); // Call the final correct download init (V13)
+        loadState();
 
         console.log("Initialization calls complete.");
     } catch (initError) {
