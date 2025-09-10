@@ -274,6 +274,9 @@ const saveState = () => {
         localStorage.setItem('jerseyBlanketState', JSON.stringify(state));
     } catch (e) {
         console.error("Error saving state:", e);
+        if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+            alert("Could not save your design. The browser's local storage is full. Please remove some images and try again.");
+        }
     }
 };
 
@@ -285,9 +288,9 @@ const loadState = () => {
                 const state = JSON.parse(savedState);
 
                 // Check if the grid size matches
-                if (state.gridSize && state.gridSize !== currentSizeParam) {
-                    alert(`Your saved design was for a ${state.gridSize} grid, but you are currently on a ${currentSizeParam} grid. Please select the correct grid size to restore your design.`);
-                    return;
+                if (state.gridSize && state.gridSize.replace(' (Default)','') !== currentSizeParam.replace(' (Default)','')) {
+                    alert(`Your saved design was for a ${state.gridSize} grid, but you are currently on a ${currentSizeParam} grid. Please go back and select the correct grid size to restore your design.`);
+                    return false;
                 }
 
                 // Clear existing items
@@ -312,11 +315,13 @@ const loadState = () => {
                 if (state.bordering) document.querySelector(`.color-swatch[data-img="${state.bordering}"]`)?.click();
                 if (state.sashing) document.querySelector(`.color-swatch[data-img="${state.sashing}"]`)?.click();
                 if (state.backing) document.querySelector(`.color-swatch[data-img="${state.backing}"]`)?.click();
+                return true; // State restored
             }
         }
     } catch (e) {
         console.error("Error loading state:", e);
     }
+    return false; // State not restored
 };
 
 
@@ -525,10 +530,13 @@ document.addEventListener('DOMContentLoaded', () => {
         applyBodyClassAndSizeDisplay();
         initializeGrids();
         initializeColorPickers();
-        initializeDefaults();
         initializeUpload();
-        initializeDownload(); // Call the final correct download init (V13)
-        loadState();
+        initializeDownload();
+
+        // Load saved state if it exists, otherwise apply defaults
+        if (!loadState()) {
+            initializeDefaults();
+        }
 
         console.log("Initialization calls complete.");
     } catch (initError) {
